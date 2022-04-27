@@ -5,8 +5,9 @@
 use clap::Parser;
 use std::fs::File;
 use std::fs;
-use std::io;
-use std::io::{Read, BufReader, BufRead, Error};
+use std::i64;
+use std::str::FromStr;
+use std::io::{Read, BufReader,self, prelude::*, BufRead, Error};
 
 // structs
 #[derive(Parser)]
@@ -16,10 +17,11 @@ pub struct Cli {
     path: std::path::PathBuf,
 
 }
-
+   
 pub struct Program {
     pub file_name: &'static str,
     pub memory: [u8; 4096], // MAX program size is 4096 lines
+    
 }
 
 pub struct CPU {
@@ -41,15 +43,60 @@ pub fn read_word(pc: u16, memory: [u8; 4096]) -> u16 {
 impl Program {
 
     //pub fn load_program(path: std::path::PathBuf) -> Result<Vec<u8>, Box<dyn std::error::Error>>{
-    pub fn load_program(&self, path: std::path::PathBuf) {   
+    pub fn new() -> Program {
         
-        let mut data = fs::read_to_string(path);
-        for byte in &data {
-            self.parse_instr( byte.to_string() ) 
-        }          
+        let new_program = Program{
+            file_name: "",
+            memory: [0; 4096],
+        };
+        new_program
+    } 
+
+    pub fn load_program(&mut self, path: std::path::PathBuf) -> io::Result<()> {   
+        // read lines from asm program 
+        let file = File::open(path)?;
+        let reader = BufReader::new(file);
+        let mut i: u32 = 0; 
+        for line in reader.lines() {
+            
+            let cpy = line?.clone();
+            self.parse_instr(&cpy, i);
+            i += 1;
+            
+        }
+
+        Ok(())
+            
     }
-    pub fn parse_instr(&mut self, string : std::string::String){
-        println!("{}", string)
+
+    pub fn parse_instr(&mut self, string : &str, i: u32){
+        // separate into components op $r1, $r2, <imm> ..  
+        let v: Vec<&str> = string.split(' ').collect();
+        let op: &str = v[0];
+       
+        let mut word: u16;
+        match op {
+            "addi"  => {
+                let t_reg: &str = &v[1].replace("$", "").replace(",", "").to_string();
+                let u8_t_reg = i64::from_str_radix(t_reg, 16);  
+                println!("{:?}", u8_t_reg[0]) 
+            },
+            "add"   =>{
+
+            }
+            _       => println!("default")
+        }
+        
+    }
+
+    pub fn encode_r_type(&mut self, comps: Vec<&str>, i: u32){
+        // store r-type instruction into program memory 
+        let op = comps[0];
+        let r1 = comps[1];
+        let imm = comps[2];
+        
+        //self.memory[i as usize] = 
+
     }
 
 }
@@ -162,7 +209,8 @@ fn main() {
         cpu.pc = addr;
     
     let args = Cli::parse(); 
-    let mut program = Program::load_program( args.path );
+    let mut program = Program::new();
+        program.load_program( args.path );
     
         //cpu.execute_cycle();
 }
