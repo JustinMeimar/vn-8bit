@@ -25,10 +25,10 @@ xor		xor $t, $v, $u											0x5
 nor     nor $t, $v, $u											0x6
 
 add		add $t, $v, $u											0x7
-sub     sub $t, $v, $u											0x8
 
 --------------------------I Type ---------------------------------------------------
 
+addi			
 beq
 bne
 
