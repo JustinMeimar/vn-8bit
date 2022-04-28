@@ -1,12 +1,12 @@
-addi $0, 1
-addi $1, 2
-addi $3, 4
-addi $4, 8
-addi $5, 16
-addi $6, 32
-addi $7, 64
-addi $8, 128
-addi $9, 256
-addi $A, 512
-addi $B, 1024
-addi $C, 2058
+addi $0, $0, 1
+addi $1, $0, 2
+addi $3, $0, 4
+addi $4, $0, 8
+addi $5, $0, 16
+addi $6, $0, 32
+addi $7, $0, 64
+addi $8, $0, 128
+addi $9, $0, 255
+addi $A, $0, 128
+addi $B, $0, 64
+addi $C, $0, 32
