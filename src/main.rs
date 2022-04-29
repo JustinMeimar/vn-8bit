@@ -32,17 +32,13 @@ fn main() {
     let args = Cli::parse(); 
     let mut program = Program::new();
         program.load_program( args.path );
-        
-
-        // let mut i = 0;
-        // while i < 20{
-        //     println!("b1: {} b2: {} word:{}", program.memory[i as usize], program.memory[i as usize + 1 ], 
-            
-        //     (program.memory[i as usize] as u16) << 8 | (program.memory[i as usize + 1] as u16 ));
-        //     i+=2; 
-        // }
-
-    cpu.execute_cycle(program.memory);
+     
+    let mut res: bool = true; 
+    println!("\nWhat the CPU sees: ");
+    while res == true{
+        res = cpu.execute_cycle(program.memory).unwrap(); 
+    }
+    
 }
 
 

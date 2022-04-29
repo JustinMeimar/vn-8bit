@@ -1,4 +1,4 @@
-8BIT_CPU ISA:
+8BIT_CPU UISA -- "Underwhelming Instruction Set Architecture":
 -----------------------------------------------------------------------------------
 Address Range: 0x0000 -- 0xFFFF
 Word Length: 8 bits
@@ -13,22 +13,22 @@ instr | format			| summary							| op code  (4 bits)    |
 
 intr == op rs rt offset
 																
-lb		lb  $v, off($u)  load byte into $v from $u + offset		0x1     0001
-sb		sb  $v, off($u)  store $v into $u + offset				0x2		0010
+lb		lb  $v, off($u)  load byte into $v from $u + offset		0x0     0001
+sb		sb  $v, off($u)  store $v into $u + offset				0x1		0010
 
 --------------------------R Type ---------------------------------------------------
 
 
-and     and $t, $v, $u   bitwise and on $v and $u, into $t		0x3     0000 0011
-or		or  $t, $v, $u											0x4        ...
-xor		xor $t, $v, $u											0x5
-nor     nor $t, $v, $u											0x6
+and     and $t, $v, $u   bitwise and on $v and $u, into $t		0x2     0000 0011
+or		or  $t, $v, $u											0x3        ...
+xor		xor $t, $v, $u											0x4
+nor     nor $t, $v, $u											0x5
 
 add		add $t, $v, $u											0x7
 
 --------------------------I Type ---------------------------------------------------
 
-addi			
+addi	addi $t, $v, imm										0x8		1000
 beq
 bne
 

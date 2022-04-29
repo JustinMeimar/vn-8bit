@@ -1,0 +1,26 @@
+---------------------------
+branch
+
+1111 1111 1111 1111
+op    r1   r2  range(signed) --> 1111 = -8 0111 = 7
+
+---------------------------
+load/ store
+
+
+---------------------------
+r type (add or and not xor etc.)
+
+1111 1111 1111 1111
+op   r1    r2   r3
+
+---------------------------
+jmp
+	 |--- 12bit --|
+1111 1111 1111 1111 --> range == address 0-4096 (no pc concat required)
+
+---------------------------
+
+how to do address aliasing? or just require the programmer to use 
+direct addresses... 
+

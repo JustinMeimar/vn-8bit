@@ -11,14 +11,16 @@ pub struct CPU {
     // 8-bit words 16-bit addresses 
 
     pub pc: u16,            //up to PC = 0x1000  valid range [0x0000, 0x1000]
-    pub mem: [u8; 4096],    //
+    pub mem: [u8; 65535],    //
     pub reg: [u8; 16],      // 0 - F
+    // special registers
     pub sp: u8,             // stack pointer
- 
+    pub upr: u8,    //intermediate for load/store
+    pub lwr: u8,    //intermediate for load/store
 }
 
 // public functions 
-pub fn read_word(pc: u16, memory: [u8; 4096]) -> u16 {
+pub fn read_word(pc: u16, memory: [u8; 65535]) -> u16 {
     let idx: u16 = pc;
     ( (memory[idx as usize] as u16) << 8 | ( memory[idx as usize + 1] ) as u16 ) as u16
 }         
@@ -29,112 +31,139 @@ impl CPU {
     pub fn new_cpu() -> CPU {
         let new_cpu = CPU{
             pc: 0,
-            mem: [0; 4096],
+            mem: [0; 65535],
             reg: [0; 16],
             sp: 0,
+            upr: 0,
+            lwr: 0,
         };
         new_cpu
     }
     
-    pub fn execute_cycle(&mut self, prg_mem: [u8; 4096] ) {
+    pub fn execute_cycle(&mut self, prg_mem: [u8; 65535] ) -> Result<bool, bool> {
         
-
-        let word: u16 = read_word(self.pc, prg_mem);
-        
-        println!("word: {}", word);
-        let res = self.process_opcode(self.pc, word);
-        self.pc += 2;
-        if res == Ok(true) {
-            self.execute_cycle(prg_mem);
-            self.print_reg_file();
+        let word: u16 = read_word(self.pc, prg_mem); 
+//        println!("wrd: {}", word);
+        let res = self.process_opcode(self.pc, word, prg_mem);
+        if res != Ok(true){
+            println!("Program terminated.... "); 
+            Ok(false)
+ 
         }else{
-            println!("Program Terminated");
+            self.print_reg_file();
+            self.pc += 2;  
+            Ok(true)
         }
-        
+       
     }
 
-    pub fn process_opcode(&mut self, pc: u16, word: u16) -> Result<bool, bool>{
-        //mask the word
+    pub fn process_opcode(&mut self, pc: u16, word: u16, prg_mem: [u8; 65535]) -> Result<bool, bool>{
+        //mask the word 
         let mut b0: u8 = ((word & 0xF000) >> 12 as u8).try_into().unwrap();
         let mut b1: u8 = ((word & 0x0F00) >> 8 as u8).try_into().unwrap();
         let mut b2: u8 = ((word & 0x00F0) >> 4 as u8).try_into().unwrap();
         let mut b3: u8 = ((word & 0x000F) as u8).try_into().unwrap(); 
-    
+        println!("WORD: {}", word);
         match b0 {
             0xF => {
                 //terminate program 
-                Err(false) 
-            },
-            0x0 => {
-                //impl lb  
-                let r_up = self.reg[b2 as usize];
-                let r_dwn = self.reg[b3 as usize];  
-                let addr = ((r_up as u16) << 8 | r_dwn as u16) as usize;                   
-    
-                self.reg[b1 as usize] = self.mem[addr];
-             
-                Ok(true)
-                
+                Ok(false) 
             },
             0x1 => {
-                //impl sb
+                //impl lb  
+                let address: u16 = read_word(self.pc + 2, prg_mem);
+                println!("Value: {}", self.mem[address as usize]);
+                self.reg[b1 as usize] = self.mem[address as usize];
 
-                self.mem[b2 as usize + b3 as usize] = self.reg[b1 as usize];  
-
+                Ok(true) 
+            },
+            0x2 => {
+                //impl sb                
+                let address: u16 = read_word(self.pc + 2, prg_mem); 
+                self.mem[address as usize] = self.reg[b1 as usize];
+                
+                println!("Value: {}, Address: {}", self.mem[address as usize], address);
                 Ok(true)
             },
-            0x2 => {println!("and"); Ok(true)},
-            0x3 => {println!("or");  Ok(true)},
-            0x4 => {println!("xor"); Ok(true)}, 
-            0x5 => {println!("nor"); Ok(true)},
-            0x6 => {println!("add"); Ok(true)},
+            0x3 => {
+                println!("and"); 
+                Ok(true)
+            },
+            0x5 => {
+                println!("or");  
+                Ok(true)
+            },
+            0x5 => {
+                println!("not"); 
+                Ok(true)
+            },   
+            0x6 => {
+                println!("xor"); 
+                Ok(true)
+            },
             0x7 => {
-                // impl addi  op $r1 |-- value --| range(0--127)
-                println!("---------------------------------------");
+                // impl add op $r1 |-- value --| range(0--127)
                 let sum = self.reg[b2 as usize] + self.reg[b3 as usize];
                 self.reg[b1 as usize] = sum;
                 
                 Ok(true)
             },
             0x8 => {
-                // impl add
-                println!("---------------------------------------"); 
+                // impl addi 
                 let sum = b3 as u8 + self.reg[b2 as usize];
                 self.reg[b1 as usize] = sum;
+                println!("Value: {}", self.mem[0xAAAA as usize]);
 
                 Ok(true)
             },
             0x9 => {
-                println!("---------------------------------------");
-                
-                let dest = ((b1 as u16) << 8 | (b2 as u16) << 4 | b1 as u16) as u16;
+                // impl jmp
+                let dest = ((b1 as u16) << 8 | (b2 as u16) << 4 | b3 as u16) as u16; 
                 self.pc = dest;
                 Ok(true)
             },
+            0xA => {
+                //impl beq
+
+                if self.reg[b1 as usize] == self.reg[b2 as usize] {
+                    // take branch 
+                    let dif = b3 as i16;
+                    if dif < 0 {
+                        self.pc -= b3 as u16;
+                    }else{
+                        self.pc += b3 as u16;
+                    } 
+                    Ok(true)
+                }else{
+                    println!("branch not taken");
+                    Ok(true) 
+                }
+            }
             /*  
             0x8 => println!("1"),
             0x9 => println!("2"),
             0xA => println!("1"),
             0xB => println!("2"), 
             */ 
-            _ => {println!("else"); Ok(true)},
+            _ => {println!("Invalid Instruction"); Err(false)},
         }
     }
     
     pub fn print_reg_file(&mut self){
         
         let mut chars: String = "".to_string();
-        println!("\n-------------------------------");
+        println!("-------------------------------");
+        println!("PC: {}", self.pc);
         println!("0 1 2 3 4 5 6 7 8 9 A B C D E F");
         
-        for r in 0..15{
+        for r in 0..16{
             let mut reg = self.reg[r].to_string();
             chars.push_str(&reg);
             chars.push_str(" ");
             //self.reg[r]  
         }
         println!("{}", chars);
-        println!("-------------------------------\n");
+        //println!("-------------------------------\n");
     } 
 
 }
