@@ -1,5 +1,4 @@
 // 16 8 bit registers named r[0] - r[f]
-//
 
 #![allow(unused)]
 use clap::Parser;
@@ -22,27 +21,28 @@ pub struct Cli {
     pattern: String,
     #[clap(parse(from_os_str))] 
     path: std::path::PathBuf,
-
 }
 
-pub fn read_word(pc: u16, memory: [u8; 4096]) -> u16 {
-    let idx: u16 = pc;
-    ( (memory[idx as usize] as u16) << 8 | ( memory[idx as usize + 1] ) as u16 ) as u16
-}         
-
 fn main() {
-
    
-    let addr = 0x20;
+    let addr = 0x00;
     let mut cpu = CPU::new_cpu();
-        cpu.mem[127 as usize] = 0xAB; //171
         cpu.pc = addr;
     
     let args = Cli::parse(); 
     let mut program = Program::new();
         program.load_program( args.path );
-    
-        //cpu.execute_cycle();
+        
+
+        // let mut i = 0;
+        // while i < 20{
+        //     println!("b1: {} b2: {} word:{}", program.memory[i as usize], program.memory[i as usize + 1 ], 
+            
+        //     (program.memory[i as usize] as u16) << 8 | (program.memory[i as usize + 1] as u16 ));
+        //     i+=2; 
+        // }
+
+    cpu.execute_cycle(program.memory);
 }
 
 

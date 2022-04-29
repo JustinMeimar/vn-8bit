@@ -1,12 +1,7 @@
+addi $C, $C, 4
+add $A, $A, $C
+addi $D, $D, 44
 addi $0, $0, 1
-addi $1, $0, 2
-addi $3, $0, 4
-addi $4, $0, 8
-addi $5, $0, 16
-addi $6, $0, 32
-addi $7, $0, 64
-addi $8, $0, 128
-addi $9, $0, 255
-addi $A, $0, 128
-addi $B, $0, 64
-addi $C, $0, 32
+addi $1, $0, 1
+end
+
