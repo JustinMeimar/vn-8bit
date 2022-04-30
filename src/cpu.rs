@@ -86,19 +86,23 @@ impl CPU {
                 Ok(true)
             },
             0x3 => {
-                println!("and"); 
+                //impl and
+                self.reg[b1 as usize] = self.reg[b2 as usize] & self.reg[b3 as usize];
                 Ok(true)
             },
             0x5 => {
-                println!("or");  
+                //impl or
+                self.reg[b1 as usize] = self.reg[b2 as usize] | self.reg[b3 as usize];
                 Ok(true)
             },
             0x5 => {
-                println!("not"); 
+                //impl nor
+                self.reg[b1 as usize] = !(self.reg[b2 as usize] | self.reg[b3 as usize]);
                 Ok(true)
             },   
             0x6 => {
-                println!("xor"); 
+                //impl xor
+                self.reg[b1 as usize] = self.reg[b2 as usize] ^ self.reg[b3 as usize]; 
                 Ok(true)
             },
             0x7 => {

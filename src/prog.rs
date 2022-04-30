@@ -128,7 +128,7 @@ impl Program {
                 
                 Ok("or")
             },
-            "not" => {
+            "nor" => {
                 let op = 0x50;
                 let r1 = self.parse_register(&v[1], 16);
                 let r2 = self.parse_register(&v[2], 16);
@@ -256,7 +256,4 @@ impl Program {
         }
         println!("{}", chars);
     }
-
-
-
 }
