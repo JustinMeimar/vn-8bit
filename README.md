@@ -1,10 +1,16 @@
 # **Assembly Decoder and Simulator for 8-bit Processor**
-
 ## **Download and Build**
 
-### Requires Rust to be installed
+#### Requires Rust to be installed
 
 ## **Regiser Use**
+|Register|Non-Aliased|Summary|
+|---|---|---|
+|t0 - t4|0x0 - 0x4|temporary registers|
+|s0 - s4|0x5 - 0x9|saved registers|
+|a0 - a1| 0xA-0xB| argument registers|
+|ra|0xF|return address|
+
 ## **Instruction Set**
 
 |Instruction|Op Code|Format|example|Notes|
