@@ -1,35 +1,21 @@
-8-bit computer schema
+# **Assembly Decoder and Simulator for 8-bit Processor**
 
-Register Use:
----------------------------------------------------------
-  $0, $1, $2, ..... $D, $E, $F
-                         Alias:     Real Rep:
-  temporary resgisers:  $t0 - $t6   $0 - $6
-  saved regisers:       $s0 - $s6   $7 - $A
-  special use reigsers: $ra         $f
+## **Download and Build**
 
-  non register-file registers:
-    hi/lo: for mul and division
-    upr: stores upper 8bits of address in lb/sb
-    lwr: stores lower 8bits of address in lb/sb
+### Requires Rust to be installed
 
-Instruction Set:
----------------------------------------------------------
-Op-Code:| Format | Notes:
---------------------------------------------------------
-  0x0     |     
-  0x1     |
-  0x2     |
-  0x3     |
-  0x4
-0x5
-0x6
-0x7
-0x8
-0x9
-0xA
-0xB
-0xC
-0xD
-0xE
-0xF
+## **Regiser Use**
+## **Instruction Set**
+
+|Instruction|Op Code|Format|example|Notes|
+|----|-----|------|-----|---|
+|lb|0x1|m-type| lb $v, addr| This instruction uses two clock cycles.
+|sb|0x2|m-type| sb $v, addr| This instruction uses two clock cycles.
+|and|0x3|r-type| and $v, $u, $t| Standard bitwise and operation
+|or|0x4|r-type|or $v, $u, $t| standard bitwise or
+|nor|0x5|r-type|nor $v, $u, $t| standard bitwise nor
+|xor|0x6|r-type|xor $v, $u, $t| standard bitwise xor
+|add|0x7|r-type|add $v, $u, $t| standard bitwise add
+|addi|0x8|i-type|addi $v, $u, 255| add immidiate in range (-128 .. 127)
+|jmp|0x9|j-type|jmp 0x000| jmp in range 0 -> 2^12
+|beq|0xA|i-type|beq $v, $u 0xbb| branch from pc in range (-16..15)
