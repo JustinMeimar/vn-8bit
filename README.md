@@ -25,3 +25,30 @@
 |addi|0x8|i-type|addi $v, $u, 255| add immidiate in range (-128 .. 127)
 |jmp|0x9|j-type|jmp 0x000| jmp in range 0 -> 2^12
 |beq|0xA|i-type|beq $v, $u 0xbb| branch from pc in range (-16..15)
+
+
+## **The Disassembler**
+### Example:
+
+        // going to need an address lookup table
+        // 0x00  addi $t0, $t0, 1
+        // 0x02  loop:
+        // 0x04     li $v0, $v0, 1
+        // 0x06     beq $s0, $s0 endloop
+        // 0x08       j loop
+        // 0x0A
+        // 0x0C  endloop:
+        // 0x0E     addi $v0, 10
+        // 0x10     syscall
+        // 
+        // -----> disassmbled 
+        // 0x00  addi $t0, $t0, 1
+        // 0x02  nop
+        // 0x04  li $v0, $v0, 1
+        // 0x06  beq $s0, $s0, 0x0C
+        // 0x08  j 0x04
+        // 0x0A  nop
+        // 0x0C  addi $v0, 10
+        // 0x0E  syscall
+        // 0x10
+        //

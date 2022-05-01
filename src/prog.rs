@@ -4,15 +4,42 @@ use std::fs;
 use std::i64;
 use std::str::FromStr;
 use std::io::{Read, BufReader, self, prelude::*, BufRead, Error};
+use std::collections::HashMap;
+
 
 // struct
 pub struct Program {
     pub file_name: &'static str, 
-    pub memory: [u8; 65535], // MAX program size is 4096 lines 
+    pub memory: [u8; 65535], // MAX program size is 4096 lines     
+}
+
+lazy_static! {
+    //register alias mapping
+    static ref HASHMAP: HashMap<&'static str, &'static str> = {
+        let mut map = HashMap::new();
+        map.insert("zero", "0");
+        map.insert("t0", "1");
+        map.insert("t1", "2");
+        map.insert("t2", "3");
+        map.insert("t3", "4");
+        map.insert("s0", "5");
+        map.insert("s1", "6");
+        map.insert("s2", "7");
+        map.insert("s3", "8");
+        map.insert("s4", "9");
+        map.insert("a0", "A");
+        map.insert("a1", "B");
+        map.insert("a2", "C");
+        map.insert("v0", "D");
+        map.insert("v1", "E");
+        map.insert("ra", "F");
+        map
+    };
 }
 
 // impl
 impl Program {
+    //static fields
 
     pub fn new() -> Program {
         //init new program with memory 
@@ -22,6 +49,34 @@ impl Program {
         };
         new_program
     } 
+    
+    pub fn disassemble(&mut self, path: std::path::PathBuf) -> io::Result<()>{
+        let file = File::open(path)?; 
+        // going to need an address lookup table
+        // 0x00  addi $t0, $t0, 1
+        // 0x02  loop:
+        // 0x04     li $v0, $v0, 1
+        // 0x06     beq $s0, $s0 endloop
+        // 0x08       j loop
+        // 0x0A
+        // 0x0C  endloop:
+        // 0x0E     addi $v0, 10
+        // 0x10     syscall
+        // 
+        // -----> disassmbled 
+        // 0x00  addi $t0, $t0, 1
+        // 0x02  nop
+        // 0x04  li $v0, $v0, 1
+        // 0x06  beq $s0, $s0, 0x0C
+        // 0x08  j 0x04
+        // 0x0A  nop
+        // 0x0C  addi $v0, 10
+        // 0x0E  syscall
+        // 0x10
+        //
+    
+
+    }
 
     pub fn load_program(&mut self, path: std::path::PathBuf) -> io::Result<()> {   
         // read lines from asm program 
@@ -38,9 +93,7 @@ impl Program {
             }
             i += 2;            
         }
-
-        Ok(())
-            
+        Ok(())  
     }
     
     pub fn store_word_from_bytes(&mut self, byte1: u8, byte2: u8, idx: u32){
@@ -48,13 +101,38 @@ impl Program {
         self.memory[idx as usize + 1] = byte2;
 
     }
+    
+    pub fn parse_addr(&mut self, bits: &str) -> u16{
+        let addr: &str = &bits.replace("0x", ""); 
+        let a64: i64 = i64::from_str_radix(addr, 16).unwrap(); 
+        let a16: u16 = a64 as u16;
+       
+        a16
+    }
+    
+    pub fn parse_register(&mut self, reg: &str, base: u32) -> u8{ 
 
+        let mut r:  &str = &reg.replace("$", "").replace(",", "").to_string();
+        let mapped = HASHMAP.get(&r);
+        if mapped != None {
+            //println!("match: {}", mapped.unwrap());
+            r = mapped.unwrap();
+        }
+        let r64: i64 = i64::from_str_radix(r, base).unwrap(); 
+        let r8:   u8 = r64 as u8;      
+         
+        r8
+    }
+    
     pub fn parse_instr(&mut self, string : &str, mut i: u32) -> Result<&str, bool>{
         // separate into components op $r1, $r2, <imm> ..  
         let v: Vec<&str> = string.split(' ').collect();
+        if v[0].ends_with(":"){
+            println!("found label..")
+        }
         let op: &str = v[0]; 
         let mut word: u16;
-    
+        
         // match the opcode to the instruction per ISA schema
         match op {
             "end" => {
@@ -72,7 +150,6 @@ impl Program {
                 let byte2 = ((addr & 0xFF00) >> 8) as u8;
                 let byte3 = ((addr & 0x00FF) as u8);
                 
-                println!("BYTES STORED: {} {} {}", byte1, byte2, byte3);
                 self.memory[i as usize] = byte1;
                 self.memory[i as usize +1] = byte2;
                 self.memory[i as usize +2] = byte3;
@@ -217,28 +294,10 @@ impl Program {
             }
         } 
     }
-    
-    pub fn parse_addr(&mut self, bits: &str) -> u16{
-        let addr: &str = &bits.replace("0x", ""); 
-        let a64: i64 = i64::from_str_radix(addr, 16).unwrap(); 
-        let a16: u16 = a64 as u16;
-       
-        a16
-    }
-    
-    pub fn parse_register(&mut self, reg: &str, base: u32) -> u8{
-        
-        let r:  &str = &reg.replace("$", "").replace(",", "").to_string(); 
-        let r64: i64 = i64::from_str_radix(r, base).unwrap(); 
-        let r8:   u8 = r64 as u8; 
-            
-        r8
-    }  
 
-    pub fn print_instr(&mut self, line: u32, op: &str, b2: &str, b1: Option<&str>, b0: Option<&str>){ 
-        
+    pub fn print_instr(&mut self, line: u32, op: &str, b2: &str, b1: Option<&str>, b0: Option<&str>){         
         let mut chars: String = "".to_string();
-        //chars.push_str(format!("{}", line)); 
+        chars.push_str("0x----  "); 
         chars.push_str(op); // there will always be an opcode
         chars.push_str(" "); 
         chars.push_str(b2); // there will always be at least 1 arg

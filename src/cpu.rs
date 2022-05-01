@@ -42,8 +42,7 @@ impl CPU {
     
     pub fn execute_cycle(&mut self, prg_mem: [u8; 65535] ) -> Result<bool, bool> {
         
-        let word: u16 = read_word(self.pc, prg_mem); 
-//        println!("wrd: {}", word);
+        let word: u16 = read_word(self.pc, prg_mem);
         let res = self.process_opcode(self.pc, word, prg_mem);
         if res != Ok(true){
             println!("Program terminated.... "); 
@@ -53,8 +52,7 @@ impl CPU {
             self.print_reg_file();
             self.pc += 2;  
             Ok(true)
-        }
-       
+        } 
     }
 
     pub fn process_opcode(&mut self, pc: u16, word: u16, prg_mem: [u8; 65535]) -> Result<bool, bool>{
@@ -63,7 +61,7 @@ impl CPU {
         let mut b1: u8 = ((word & 0x0F00) >> 8 as u8).try_into().unwrap();
         let mut b2: u8 = ((word & 0x00F0) >> 4 as u8).try_into().unwrap();
         let mut b3: u8 = ((word & 0x000F) as u8).try_into().unwrap(); 
-        println!("WORD: {}", word);
+        
         match b0 {
             0xF => {
                 //terminate program 
@@ -71,8 +69,7 @@ impl CPU {
             },
             0x1 => {
                 //impl lb  
-                let address: u16 = read_word(self.pc + 2, prg_mem);
-                println!("Value: {}", self.mem[address as usize]);
+                let address: u16 = read_word(self.pc + 2, prg_mem); 
                 self.reg[b1 as usize] = self.mem[address as usize];
 
                 Ok(true) 
@@ -82,7 +79,6 @@ impl CPU {
                 let address: u16 = read_word(self.pc + 2, prg_mem); 
                 self.mem[address as usize] = self.reg[b1 as usize];
                 
-                println!("Value: {}, Address: {}", self.mem[address as usize], address);
                 Ok(true)
             },
             0x3 => {
@@ -116,7 +112,6 @@ impl CPU {
                 // impl addi 
                 let sum = b3 as u8 + self.reg[b2 as usize];
                 self.reg[b1 as usize] = sum;
-                println!("Value: {}", self.mem[0xAAAA as usize]);
 
                 Ok(true)
             },
@@ -137,11 +132,8 @@ impl CPU {
                     }else{
                         self.pc += b3 as u16;
                     } 
-                    Ok(true)
-                }else{
-                    println!("branch not taken");
-                    Ok(true) 
                 }
+                Ok(true)
             }
             /*  
             0x8 => println!("1"),
@@ -158,16 +150,16 @@ impl CPU {
         let mut chars: String = "".to_string();
         println!("-------------------------------");
         println!("PC: {}", self.pc);
-        println!("0 1 2 3 4 5 6 7 8 9 A B C D E F");
-        
+        println!("$0 | $t0 | $t1 | $t2 | $t3 | $s0 | $s1 | $s2 | $s3 | $s4 | $a0 | $a1 | $a2 | $v0 | $v1 | $ra |");
+
         for r in 0..16{
             let mut reg = self.reg[r].to_string();
             chars.push_str(&reg);
-            chars.push_str(" ");
+            chars.push_str("  |  ");
             //self.reg[r]  
         }
         println!("{}", chars);
-        //println!("-------------------------------\n");
+        
     } 
 
 }

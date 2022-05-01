@@ -1,16 +1,19 @@
 // 16 8 bit registers named r[0] - r[f]
-
 #![allow(unused)]
+#[macro_use]
+extern crate lazy_static;
 use clap::Parser;
-
 use std::fs::File;
 use std::fs;
 use std::i64;
 use std::str::FromStr;
 use std::io::{Read, BufReader, self, prelude::*, BufRead, Error};
 
+
+
 mod cpu;
 mod prog;
+
 
 use crate::cpu::CPU;
 use crate::prog::Program;
@@ -31,6 +34,7 @@ fn main() {
     
     let args = Cli::parse(); 
     let mut program = Program::new();
+        program.disassemble( args.path );
         program.load_program( args.path );
      
     let mut res: bool = true; 
