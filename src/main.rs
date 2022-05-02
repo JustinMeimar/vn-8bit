@@ -12,12 +12,12 @@ use std::io::{Read, BufReader, self, prelude::*, BufRead, Error};
 
 
 mod cpu;
-mod prog;
-
+//mod prog;
+mod assembler;
 
 use crate::cpu::CPU;
-use crate::prog::Program;
-
+//use crate::prog::Program;
+use crate::assembler::Program;
 // structs
 #[derive(Parser)]
 pub struct Cli {
@@ -33,9 +33,8 @@ fn main() {
         cpu.pc = addr;
     
     let args = Cli::parse(); 
-    let mut program = Program::new();
-        program.disassemble( args.path );
-        program.load_program( args.path );
+    let mut program = Program::new(); 
+        program.load_program( &args.path );
      
     let mut res: bool = true; 
     println!("\nWhat the CPU sees: ");

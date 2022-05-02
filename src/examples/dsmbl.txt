@@ -1,0 +1,41 @@
+Assembler Stages
+
+------->>>>	Initial .asm typed by programmer
+main:
+loop:
+	addi $s0, $0, 5
+	addi $t0, $t0, 1
+	beq $t0, $s0, exit_loop
+	jmp loop
+exit_loop:
+	addi $v0, $v0, 1
+
+------>>>>	Initial scan makes address aliasing
+
+0x00	nop
+0x02	nop
+0x04    addi $s0, $0, 5
+0x06	addi $t0, $t0, 1
+0x08	beq $t0, $s0, 0x0E
+0x0A	jmp 0x00
+0x0C	nop
+0x0E	addi $v0, $v0, 1
+
+----->>>>>> Second Scan removes labels
+0x00    addi $5, $0, 5
+0x02	addi $1, $1, 1
+0x04	beq $1, $5, 0x08
+0x06	jmp 0x00
+0x08	addi $A, $A, 1
+
+------>>>>> Third scan translates pre-defined patterns into binary
+
+0001 0101 0000 0101
+0001 0001 0001 0001
+1001 0001 0101 1000
+1011 0000 0000 0000
+0001 1010 1010 0001
+
+------>>>>> Fourth Scan pushes each binary instruction through the CPU
+
+ raw binary ------> CPU -----> modified regiser state

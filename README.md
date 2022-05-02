@@ -28,9 +28,8 @@
 
 
 ## **The Disassembler**
-### Example:
-
-        // going to need an address lookup table
+### Example
+        
         // 0x00  addi $t0, $t0, 1
         // 0x02  loop:
         // 0x04     li $v0, $v0, 1
@@ -39,16 +38,15 @@
         // 0x0A
         // 0x0C  endloop:
         // 0x0E     addi $v0, 10
-        // 0x10     syscall
-        // 
-        // -----> disassmbled 
-        // 0x00  addi $t0, $t0, 1
+        // 0x10     
+
+        // 0x00  addi $1, $1, 1
         // 0x02  nop
-        // 0x04  li $v0, $v0, 1
-        // 0x06  beq $s0, $s0, 0x0C
+        // 0x04  li $D, $D, 1
+        // 0x06  beq $5, $5, 0x0C
         // 0x08  j 0x04
         // 0x0A  nop
-        // 0x0C  addi $v0, 10
-        // 0x0E  syscall
+        // 0x0C  addi $D, 10
+        // 0x0E 
         // 0x10
         //

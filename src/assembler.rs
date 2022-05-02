@@ -1,6 +1,4 @@
-// dependancies
 use std::fs::File;
-use std::fs;
 use std::i64;
 use std::str::FromStr;
 use std::io::{Read, BufReader, self, prelude::*, BufRead, Error, Write};
@@ -8,40 +6,41 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::path::PathBuf;
 
+
 // struct
 pub struct Program {
     pub file_name: &'static str, 
     pub memory: [u8; 65535], // MAX program size is 4096 lines     
 }
 
+
+// static
 lazy_static! {
     //register alias mapping
     static ref HASHMAP: HashMap<&'static str, &'static str> = {
         let mut map = HashMap::new();
-        map.insert("zero", "0");
-        map.insert("t0", "1");
+        map.insert("zero", "0"); //hardwired to zero
+        map.insert("t0", "1");   //temporary registers
         map.insert("t1", "2");
         map.insert("t2", "3");
         map.insert("t3", "4");
-        map.insert("s0", "5");
-        map.insert("s1", "6");
+        map.insert("s0", "5");   //saved registers
+        map.insert("s1", "6"); 
         map.insert("s2", "7");
         map.insert("s3", "8");
         map.insert("s4", "9");
         map.insert("a0", "A");
-        map.insert("a1", "B");
+        map.insert("a1", "B");   // argument registers
         map.insert("a2", "C");
-        map.insert("v0", "D");
-        map.insert("v1", "E");
-        map.insert("ra", "F");
+        map.insert("v0", "D");   //return registers
+        map.insert("v1", "E");     
+        map.insert("ra", "F");   //return address register
         map
     };
 }
 
-// impl
+//impl
 impl Program {
-    //static fields
-
     pub fn new() -> Program {
         //init new program with memory 
         let new_program = Program{
@@ -49,86 +48,6 @@ impl Program {
             memory: [0; 65535],
         };
         new_program
-    } 
-    
-    pub fn disassemble(&mut self, path: &std::path::PathBuf) -> io::Result<()>{
-        // open file, scan for label: 
-        // add {label: pc+2} to address lookup table
-        // another traversal. remove label: 
-        // replace label (no ":") with map["label"] --> pc+2
-        // possibly remove indentation
-        
-        let mut src = File::open(&path)?;
-        let mut data = String::new();
-        let mut alias_table: HashMap<String, String> = HashMap::new();
-
-        src.read_to_string(&mut data);
-       
-        let mut string: String = "".to_string();
-        let mut pc_mirror: u32 = 0;
-        for byte in data.chars(){
-            if byte != '\n'{
-                string.push_str(&byte.to_string());; 
-            }
-            if byte == '\n' { 
-                println!("{}", string);
-                self.build_alias_table(&string, pc_mirror, &mut alias_table);
-                //println!("{}", new_str);
-                string = "".to_string();
-                pc_mirror += 2;
-            }
-        } 
-        self.reassemble(path, &mut alias_table); 
-
-        Ok(())    
-    }
-    
-    pub fn reassemble(&mut self, path: &std::path::PathBuf, alias_table: &mut HashMap<String, String>) -> io::Result<()> {
-       
-        let f_name = path.file_name().unwrap().to_str().unwrap(); 
-        let w_path = format!("/bin/{}", f_name);
-        let mut w_file = File::create(&w_path).expect("Error creating file");
-        let mut r_file = File::open(&path)?;
-        let mut data = String::new();
-        let mut t_string: String = "".to_string();
-        r_file.read_to_string(&mut data); 
-        
-        for byte in data.chars(){
-            
-            if byte != '\n' && byte != ' ' {
-                t_string.push_str(&byte.to_string());
-                
-            }else{
-                t_string = t_string.split_whitespace().collect();  
-                if alias_table.contains_key(&t_string) {
-                    println!("swap {} with {}", t_string, alias_table.get(&t_string).unwrap());
-                    t_string = alias_table.get(&t_string).unwrap().to_string();
-                }
-                println!("T_STRING: {}", t_string);
-                //fs::write(w_file, t_string).expect("invaldi write");
-                t_string = "".to_string(); 
-            }
-        }
-           
-        Ok(())
-    }
-    
-    pub fn build_alias_table(&mut self, string: &String, pc_mirror: u32, map: &mut HashMap<String, String>){
-      
-        // money 
-        println!("before: {}", string); 
-        let mut chars = "".to_string();
-        let mut v: Vec<&str> = string.split(" ").collect(); 
-        if v[0].ends_with(":"){ 
-            chars.push_str(&pc_mirror.to_string());    
-            map.insert(v[0].replace(":", ""), pc_mirror.to_string());
-            map.insert(v[0].to_string(), "nop".to_string());
-        }else{
-            chars.push_str(string);
-        }     
-        chars.push_str("\n");
-        println!("after: {}", chars);    
-
     }
 
     pub fn load_program(&mut self, path: &std::path::PathBuf) -> io::Result<()> {   
@@ -136,10 +55,16 @@ impl Program {
         let file = File::open(path)?;
         let reader = BufReader::new(file);
         let mut i: u32 = 0; 
-        
-        println!(".asm interpreted as:\n------------------");
+        let mut alias_table: HashMap<String, String> = self.build_alias_table(path).unwrap();
+
+        // for (key, value) in alias_table.into_iter(){
+        //     println!("{} / {}", key, value);
+        // }
+
         for line in reader.lines() {    
             let cpy = line?.clone();
+            let line = self.parse_line(&cpy, i, &mut alias_table).unwrap();
+            println!("{}", line);
             let instr = self.parse_instr(&cpy, i); 
             if instr.unwrap() == "lb" || instr.unwrap() == "sb" {
                 i+=2; //skip pc by two
@@ -148,18 +73,26 @@ impl Program {
         }
         Ok(())  
     }
-    
-    pub fn store_word_from_bytes(&mut self, byte1: u8, byte2: u8, idx: u32){
-        self.memory[idx as usize]     = byte1;
-        self.memory[idx as usize + 1] = byte2;
-    }
-    
-    pub fn parse_addr(&mut self, bits: &str) -> u16{
-        let addr: &str = &bits.replace("0x", ""); 
-        let a64: i64 = i64::from_str_radix(addr, 16).unwrap(); 
-        let a16: u16 = a64 as u16;
-       
-        a16
+
+    pub fn parse_line(&mut self, line: &str, mut i: u32, alias_table: &mut HashMap<String, String>) -> Result<String, String> {
+        // this function parses each line and replaces aliased labels with explicit addresses.
+        //println!("line: {}", line);
+        let mut v: Vec<&str> = line.split(" ").collect();
+        let mut u: String = "".to_string();
+
+        for mut item in v { 
+            let item = item.to_string();
+            if alias_table.contains_key(&item) {
+                //println!("swap {} with {}", item, alias_table.get(&item).unwrap());
+                let replace = alias_table.get(&item).unwrap();
+                u.push_str(&replace)
+            } else {
+                u.push_str(&item);
+            } 
+            u.push_str(&" ".to_string());
+        }
+        
+        Ok(u.trim().to_string())
     }
     
     pub fn parse_register(&mut self, reg: &str, base: u32) -> u8{ 
@@ -176,13 +109,15 @@ impl Program {
          
         r8
     }
-    
-    pub fn parse_instr(&mut self, string : &str, mut i: u32) -> Result<&str, bool>{
+
+    pub fn parse_instr(&mut self, instr: &str, mut i: u32) ->  Result<&'static str, &'static str> {
+        // recieves line in intermediate state, at which transformation into binary is much simpler. 
+
         // separate into components op $r1, $r2, <imm> ..  
-        let v: Vec<&str> = string.split(' ').collect();
+        let v: Vec<&str> = instr.split(' ').collect();
         let op: &str = v[0]; 
         let mut word: u16;
-        
+
         // match the opcode to the instruction per ISA schema
         match op {
             "end" => {
@@ -193,6 +128,7 @@ impl Program {
 
                 Ok("end")
             },
+            /* 
             "lb"  => {
                 let op = 0x10;
                 let byte1 = op | self.parse_register(&v[1], 16);
@@ -294,9 +230,9 @@ impl Program {
                 self.store_word_from_bytes(byte1, byte2, i);
                 
                 Ok("add")
-           }, 
-           "addi" => {
-               // store binary format for addi 
+            }, 
+            "addi" => {
+                // store binary format for addi 
                 let op = 0x80;
                 let r1 = self.parse_register(&v[1], 16); //r1
                 let r2 = self.parse_register(&v[2], 16); //r2
@@ -337,12 +273,50 @@ impl Program {
                 
                 Ok("beq")
             },
+            */
             // Default case
             _ => {
                 println!("Invalid Instruction (Parsed)");
                 Ok("invalid") 
             }
         } 
+            Ok("string")
+    }
+
+    pub fn build_alias_table(&mut self, path: &std::path::PathBuf) -> Result<HashMap<String, String>, &str> {
+        // builds an alias table for each label in the program 
+        let mut alias_table: HashMap<String, String> = HashMap::new();
+        let mut r_file = File::open(&path).expect("read error");
+        let mut data = String::new();
+        let mut string: String = "".to_string();
+        let mut pc_mirror: u32 = 0;
+
+        r_file.read_to_string(&mut data); //read data from file into a string
+
+        for byte in data.chars(){ //itterate through each line
+            if byte != '\n'{
+                string.push_str(&byte.to_string());; 
+            }
+            if byte == '\n' { 
+                // insert the mapped alias into the alias table 
+                {
+                    let mut chars = "".to_string();
+                    let mut v: Vec<&str> = string.split(" ").collect();
+                    if v[0].ends_with(":") {
+                        chars.push_str(&pc_mirror.to_string());
+                        alias_table.insert(v[0].replace(":", ""), pc_mirror.to_string());
+                        alias_table.insert(v[0].to_string(), "nop".to_string());
+                    } else {
+                        chars.push_str(&string);
+                    }
+                    chars.push_str("\n");
+                }
+                string = "".to_string();
+                pc_mirror += 2;
+            }
+        }
+      
+        Ok(alias_table)
     }
 
     pub fn print_instr(&mut self, line: u32, op: &str, b2: &str, b1: Option<&str>, b0: Option<&str>){         
@@ -365,4 +339,7 @@ impl Program {
         }
         println!("{}", chars);
     }
+
+
 }
+
