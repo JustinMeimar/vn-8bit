@@ -57,19 +57,16 @@ impl Program {
         let mut i: u32 = 0; 
         let mut alias_table: HashMap<String, String> = self.build_alias_table(path).unwrap();
 
-        // for (key, value) in alias_table.into_iter(){
-        //     println!("{} / {}", key, value);
-        // }
-
         for line in reader.lines() {    
             let cpy = line?.clone();
             let line = self.parse_line(&cpy, i, &mut alias_table).unwrap();
-            println!("{}", line);
-            let instr = self.parse_instr(&cpy, i); 
-            if instr.unwrap() == "lb" || instr.unwrap() == "sb" {
+            //println!("{}", line);
+            let instr = self.parse_instr(&line, i); 
+       
+            if instr.as_ref().unwrap() == "lb" || instr.as_ref().unwrap() == "sb" {
                 i+=2; //skip pc by two
             }
-            i += 2;            
+            i += 2;             
         }
         Ok(())  
     }
@@ -110,7 +107,22 @@ impl Program {
         r8
     }
 
-    pub fn parse_instr(&mut self, instr: &str, mut i: u32) ->  Result<&'static str, &'static str> {
+    pub fn store_word_from_bytes(&mut self, byte1: u8, byte2: u8, idx: u32) -> Result<(), &str>{
+        self.memory[idx as usize] = byte1;
+        self.memory[idx as usize + 1] = byte2;
+        println!("b1/b2:  {} {}", byte1, byte1);
+        Ok(())
+    }
+    
+    pub fn parse_addr(&mut self, bits: &str) -> u16{
+        let addr: &str = &bits.replace("0x", ""); 
+        let a64: i64 = i64::from_str_radix(addr, 16).unwrap(); 
+        let a16: u16 = a64 as u16;
+       
+        a16
+    }
+
+    pub fn parse_instr(&mut self, instr: &str, mut i: u32) ->  Result<String, String> {
         // recieves line in intermediate state, at which transformation into binary is much simpler. 
 
         // separate into components op $r1, $r2, <imm> ..  
@@ -118,6 +130,7 @@ impl Program {
         let op: &str = v[0]; 
         let mut word: u16;
 
+        //println!("OP: {}", op);
         // match the opcode to the instruction per ISA schema
         match op {
             "end" => {
@@ -126,9 +139,9 @@ impl Program {
                 self.memory[i as usize]    = 0xFF;
                 self.memory[i as usize +1] = 0xFF;
 
-                Ok("end")
+                return Ok("end".to_string());
             },
-            /* 
+             
             "lb"  => {
                 let op = 0x10;
                 let byte1 = op | self.parse_register(&v[1], 16);
@@ -144,7 +157,7 @@ impl Program {
                 i+=2;
                 self.print_instr(i, &v[0], &v[1], Some(&v[2]), None);
 
-                Ok("lb")
+                return Ok("lb".to_string());
             },
             "sb"  => {
                 let op = 0x20;
@@ -163,7 +176,7 @@ impl Program {
 
                 self.print_instr(i, &v[0], &v[1], Some(&v[2]), None);
 
-                Ok("sb")
+                return Ok("sb".to_string());
             },
             "and" => {
                 let op = 0x30;
@@ -176,7 +189,7 @@ impl Program {
 
                 self.store_word_from_bytes(byte1, byte2, i);
 
-                Ok("and")
+                return Ok("and".to_string());
             },
             "or"  => {
                 let op = 0x40;
@@ -189,7 +202,7 @@ impl Program {
 
                 self.store_word_from_bytes(byte1, byte2, i);
 
-                Ok("or")
+                return Ok("or".to_string());
             },
             "nor" => {
                 let op = 0x50;
@@ -202,7 +215,7 @@ impl Program {
 
                 self.store_word_from_bytes(byte1, byte2, i);
 
-                Ok("not")
+                return Ok("not".to_string());
             },
             "xor" => {
                 let op = 0x60;
@@ -215,7 +228,7 @@ impl Program {
 
                 self.store_word_from_bytes(byte1, byte2, i);
 
-                Ok("xor")
+                return Ok("xor".to_string());
             },
             "add" => {
                 // store binary format for add 
@@ -229,7 +242,7 @@ impl Program {
                 
                 self.store_word_from_bytes(byte1, byte2, i);
                 
-                Ok("add")
+                return Ok("add".to_string());
             }, 
             "addi" => {
                 // store binary format for addi 
@@ -244,7 +257,7 @@ impl Program {
                 self.store_word_from_bytes(byte1, byte2, i);
                 self.print_instr(i, &v[0], &v[1], Some(&v[2]), Some(&v[3]));
 
-                Ok("addi")
+                return Ok("addi".to_string());
             },
             "jmp" => {
                 //jmp to specific address (no aliasing yet)
@@ -256,31 +269,38 @@ impl Program {
                 self.store_word_from_bytes(byte1, byte2, i);
                 self.print_instr(i, &v[0], &v[1], None, None); 
                 
-                Ok("jmp")
+                return Ok("jmp".to_string());
             },
             "beq" => {
-                
+                // subject to reword because range is tiny.     
                 let op = 0xA0;
                 let r1 = self.parse_register(&v[1], 16); 
                 let r2 = self.parse_register(&v[2], 16);
-                let im = self.parse_register(&v[3], 10); //range -8 <-> + 7
+                let im = self.parse_register(&v[3], 10) - i as u8; // relative 
                 
                 let byte1: u8 = (op | (r1));
                 let byte2: u8 = (r2<<4 | im & 0x0F); 
 
                 self.store_word_from_bytes(byte1, byte2, i);
-                self.print_instr(i, &v[0], &v[1], Some(&v[2]), Some(&v[3]));     
+                self.print_instr(i, &v[0], &v[1], Some(&v[2]), Some(&v[3])); 
                 
-                Ok("beq")
+                return Ok("beq".to_string());
             },
-            */
+            "nop" => {
+                let byte1: u8 = 0x00 as u8;
+                let byte2: u8 = 0x00 as u8;
+
+                self.store_word_from_bytes(byte1, byte2, i);
+
+                return Ok("nop".to_string());
+            }            
             // Default case
             _ => {
                 println!("Invalid Instruction (Parsed)");
-                Ok("invalid") 
+                return Ok("invalid".to_string());
             }
         } 
-            Ok("string")
+        return Ok("string".to_string());
     }
 
     pub fn build_alias_table(&mut self, path: &std::path::PathBuf) -> Result<HashMap<String, String>, &str> {

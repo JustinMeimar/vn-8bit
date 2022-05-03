@@ -50,7 +50,10 @@ impl CPU {
  
         }else{
             self.print_reg_file();
-            self.pc += 2;  
+            self.pc += 2; 
+            if self.pc > 1000 {
+                return Ok(false);
+            }
             Ok(true)
         } 
     }
@@ -63,10 +66,10 @@ impl CPU {
         let mut b3: u8 = ((word & 0x000F) as u8).try_into().unwrap(); 
         
         match b0 {
-            0xF => {
-                //terminate program 
-                Ok(false) 
-            },
+            0x0 => {
+                //impl nop
+                Ok(true)
+            }, 
             0x1 => {
                 //impl lb  
                 let address: u16 = read_word(self.pc + 2, prg_mem); 
@@ -134,7 +137,11 @@ impl CPU {
                     } 
                 }
                 Ok(true)
-            }
+            },
+            0xF => {
+                //terminate program 
+                Ok(false) 
+            },
             /*  
             0x8 => println!("1"),
             0x9 => println!("2"),
@@ -161,6 +168,23 @@ impl CPU {
         println!("{}", chars);
         
     } 
+    pub fn print_binary(&mut self, prg_mem: [u8; 65535]){
+        let mut chars: String = "".to_string(); 
+        let mut i: u32 = 0; 
+        for byte in prg_mem {
+            chars.push_str(&byte.to_string());
+            chars.push_str(&" ".to_string());
+            i+=1;
+            if i % 2 == 0 {
+                println!("{}", chars);
+                chars = "".to_string();
+            } 
+            if i > 109 {
+                break;
+            }
+        }
 
+
+    }
 }
 

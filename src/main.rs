@@ -38,6 +38,7 @@ fn main() {
      
     let mut res: bool = true; 
     println!("\nWhat the CPU sees: ");
+    cpu.print_binary(program.memory);
     while res == true{
         res = cpu.execute_cycle(program.memory).unwrap(); 
     }

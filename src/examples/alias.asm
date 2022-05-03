@@ -5,4 +5,5 @@ loop:
 	beq $t0, $s0, exit_loop
 	jmp loop
 exit_loop:
-	addi $v0, 1
+	addi $v0, $v0, 1
+end
