@@ -293,7 +293,6 @@ impl Program {
                 // std jump, but save original pc in ra_lo and ra_hi  
                 let op = 0xB0;
                 let addr = self.parse_addr(v[1], 10);
-                println!("ADDRESS ADDRESS: {}", addr); 
                 let byte1: u8 = op | ((addr & 0x0F00) >> 8) as u8;
                 let byte2: u8 = (addr & 0x00FF) as u8;
                 let byte3: u8 = ((i as u16 & 0xFF00) >> 8) as u8;
