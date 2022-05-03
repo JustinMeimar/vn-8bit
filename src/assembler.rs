@@ -60,10 +60,13 @@ impl Program {
         for line in reader.lines() {    
             let cpy = line?.clone();
             let line = self.parse_line(&cpy, i, &mut alias_table).unwrap();
-            //println!("{}", line);
+            println!("{}", line);
             let instr = self.parse_instr(&line, i); 
        
             if instr.as_ref().unwrap() == "lb" || instr.as_ref().unwrap() == "sb" {
+                i+=2; //skip pc by two
+            }
+            if instr.as_ref().unwrap() == "jal" {
                 i+=2; //skip pc by two
             }
             i += 2;             
@@ -78,7 +81,7 @@ impl Program {
         let mut u: String = "".to_string();
 
         for mut item in v { 
-            let item = item.to_string();
+            let item = item.trim().to_string();
             if alias_table.contains_key(&item) {
                 //println!("swap {} with {}", item, alias_table.get(&item).unwrap());
                 let replace = alias_table.get(&item).unwrap();
@@ -114,9 +117,9 @@ impl Program {
         Ok(())
     }
     
-    pub fn parse_addr(&mut self, bits: &str) -> u16{
+    pub fn parse_addr(&mut self, bits: &str, base: u32) -> u16{
         let addr: &str = &bits.replace("0x", ""); 
-        let a64: i64 = i64::from_str_radix(addr, 16).unwrap(); 
+        let a64: i64 = i64::from_str_radix(addr, base).unwrap(); 
         let a16: u16 = a64 as u16;
        
         a16
@@ -145,7 +148,7 @@ impl Program {
             "lb"  => {
                 let op = 0x10;
                 let byte1 = op | self.parse_register(&v[1], 16);
-                let addr = self.parse_addr(v[2]);
+                let addr = self.parse_addr(v[2], 16);
                 let byte2 = ((addr & 0xFF00) >> 8) as u8;
                 let byte3 = ((addr & 0x00FF) as u8);
                 
@@ -163,7 +166,7 @@ impl Program {
                 let op = 0x20;
 
                 let byte1 = op | self.parse_register(&v[1], 16); 
-                let addr = self.parse_addr(v[2]);  
+                let addr = self.parse_addr(v[2], 16);  
                 let byte2 = ((addr & 0xFF00) >> 8) as u8;
                 let byte3 = ((addr & 0x00FF) as u8);
 
@@ -262,7 +265,7 @@ impl Program {
             "jmp" => {
                 //jmp to specific address (no aliasing yet)
                 let op = 0x90;
-                let addr = self.parse_addr(v[1]);
+                let addr = self.parse_addr(v[1], 10);
                 let byte1: u8 = op | ((addr & 0x0F00) >> 8) as u8;
                 let byte2: u8 = (addr & 0x00FF) as u8;
                 
@@ -285,6 +288,36 @@ impl Program {
                 self.print_instr(i, &v[0], &v[1], Some(&v[2]), Some(&v[3])); 
                 
                 return Ok("beq".to_string());
+            },
+            "jal" => {
+                // std jump, but save original pc in ra_lo and ra_hi  
+                let op = 0xB0;
+                let addr = self.parse_addr(v[1], 10);
+                println!("ADDRESS ADDRESS: {}", addr); 
+                let byte1: u8 = op | ((addr & 0x0F00) >> 8) as u8;
+                let byte2: u8 = (addr & 0x00FF) as u8;
+                let byte3: u8 = ((i as u16 & 0xFF00) >> 8) as u8;
+                let byte4: u8 = (i as u16 & 0x00FF) as u8;
+ 
+                self.memory[i as usize] = byte1;
+                self.memory[i as usize +1] = byte2;
+                self.memory[i as usize +2] = byte3;
+                self.memory[i as usize +3] = byte4;
+                    
+                self.print_instr(i, &v[0], &v[1], None, None); 
+                
+                return Ok("jal".to_string());
+            },
+            "jr" => {
+                // impl return to address in ra
+                let op = 0xC0;
+                let r1 = self.parse_register(&v[1], 16);
+
+                let byte1: u8 = (op | r1) as u8;
+                let byte2: u8 = 0x00;
+
+                self.store_word_from_bytes(byte1, byte2, i);
+
             },
             "nop" => {
                 let byte1: u8 = 0x00 as u8;
@@ -322,10 +355,13 @@ impl Program {
                 {
                     let mut chars = "".to_string();
                     let mut v: Vec<&str> = string.split(" ").collect();
-                    if v[0].ends_with(":") {
+                    
+                    let mut label = v[0].trim().to_string();
+                    
+                    if label.ends_with(":") {
                         chars.push_str(&pc_mirror.to_string());
-                        alias_table.insert(v[0].replace(":", ""), pc_mirror.to_string());
-                        alias_table.insert(v[0].to_string(), "nop".to_string());
+                        alias_table.insert(label.replace(":", ""), pc_mirror.to_string());
+                        alias_table.insert(label.to_string(), "nop".to_string());
                     } else {
                         chars.push_str(&string);
                     }
@@ -351,11 +387,11 @@ impl Program {
                 chars.push_str(b1);
                 chars.push_str(" ");
             },
-            _ => {}
+            _ => {chars.push_str("")}
         }
         match b0 {
             Some(b0) => chars.push_str(b0),
-            _ => {}
+            _ => {chars.push_str("")}
         }
         println!("{}", chars);
     }

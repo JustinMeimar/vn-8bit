@@ -15,8 +15,8 @@ pub struct CPU {
     pub reg: [u8; 16],      // 0 - F
     // special registers
     pub sp: u8,             // stack pointer
-    pub upr: u8,    //intermediate for load/store
-    pub lwr: u8,    //intermediate for load/store
+    pub ra_hi: u8,    //intermediate for load/store
+    pub ra_lo: u8,    //intermediate for load/store
 }
 
 // public functions 
@@ -34,8 +34,8 @@ impl CPU {
             mem: [0; 65535],
             reg: [0; 16],
             sp: 0,
-            upr: 0,
-            lwr: 0,
+            ra_lo: 0,
+            ra_hi: 0,
         };
         new_cpu
     }
@@ -51,9 +51,7 @@ impl CPU {
         }else{
             self.print_reg_file();
             self.pc += 2; 
-            if self.pc > 1000 {
-                return Ok(false);
-            }
+          
             Ok(true)
         } 
     }
@@ -74,14 +72,14 @@ impl CPU {
                 //impl lb  
                 let address: u16 = read_word(self.pc + 2, prg_mem); 
                 self.reg[b1 as usize] = self.mem[address as usize];
-
+                self.pc += 2;
                 Ok(true) 
             },
             0x2 => {
                 //impl sb                
                 let address: u16 = read_word(self.pc + 2, prg_mem); 
                 self.mem[address as usize] = self.reg[b1 as usize];
-                
+                self.pc += 2; 
                 Ok(true)
             },
             0x3 => {
@@ -136,6 +134,24 @@ impl CPU {
                         self.pc += b3 as u16;
                     } 
                 }
+                Ok(true)
+            },
+            0xB => {
+                // impl jal
+                let return_address: u16 = read_word(self.pc + 2, prg_mem);
+                let address: u16 = (word & 0x0FFF);
+                
+                self.pc = address;
+                self.ra_hi = ((return_address & 0xFF00) >> 8) as u8; 
+                self.ra_lo = (return_address & 0x00FF) as u8;
+
+                Ok(true)
+            },
+            0xC => {
+                // impl jr 
+                let address = ((self.ra_hi as u16) << 8) | self.ra_lo as u16;
+                self.pc = address;              
+
                 Ok(true)
             },
             0xF => {
