@@ -39,6 +39,11 @@
 ||0xE|
 |end|0xF| no type| end| terminates any program from anywhere
 ## **The Assember**
+#### Input code written in assembly (with the Instruction Set referenced above)and see it transformed into machine code our virtual CPU can actually process. The main technical achievments being address aliasing and register alias  mapping. For example:
+|pre assembled code|assembled code|
+|----|----|
+|beq $s0, $v0, endloop|beq $5, $D, 10|
+
 ### Example
         
         // 0x00  addi $t0, $t0, 1
