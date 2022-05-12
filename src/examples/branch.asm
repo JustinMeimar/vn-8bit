@@ -1,8 +1,7 @@
-addi $2, $0, 5
-addi $1, $1, 1
-beq $1, $2, 8
-jmp 0x0000
-jmp 0x0000
-jmp 0x0000
-jmp 0x0000
-end
+main:
+	addi $t1, $zero, 5
+	addi $t2, $t2, 1
+	beq $t1, $t2, exit_main
+	jmp main	
+exit_main:
+	end

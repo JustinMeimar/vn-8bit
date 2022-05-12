@@ -1,4 +1,4 @@
-# **Assembly Decoder and Simulator for 8-bit Processor**
+# **Assembler and Simulator for 8-bit Processor**
 ## **Download and Build**
 
 #### Requires Rust to be installed

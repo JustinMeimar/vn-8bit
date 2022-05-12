@@ -1,7 +1,7 @@
 main:
-	addi $s0, $0, 5
-	addi $t0, $0, 0	
-	addi $t1, $0, 0
+	addi $s0, $zero, 5
+	addi $t0, $zero, 0	
+	addi $t1, $zero, 0
 	loop:
 		addi $t0, $t0, 1
 		jal sbrt

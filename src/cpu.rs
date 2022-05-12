@@ -145,6 +145,7 @@ impl CPU {
                 self.ra_hi = ((return_address & 0xFF00) >> 8) as u8; 
                 self.ra_lo = (return_address & 0x00FF) as u8;
 
+                self.pc += 2;
                 Ok(true)
             },
             0xC => {
@@ -157,13 +158,7 @@ impl CPU {
             0xF => {
                 //terminate program 
                 Ok(false) 
-            },
-            /*  
-            0x8 => println!("1"),
-            0x9 => println!("2"),
-            0xA => println!("1"),
-            0xB => println!("2"), 
-            */ 
+            },         
             _ => {println!("Invalid Instruction"); Err(false)},
         }
     }
