@@ -14,3 +14,7 @@ exit_loop:
 
 	addi $v0, $v0, 1
 end
+
+
+/// This program demostrates how labels are aliased into addresses
+/// during assembling

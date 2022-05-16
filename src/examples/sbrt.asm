@@ -1,15 +1,16 @@
 main:
-	addi $s0, $zero, 5
-	addi $t0, $zero, 0	
-	addi $t1, $zero, 0
-	loop:
-		addi $t0, $t0, 1
+	addi $s0, $zero, 6
+	add $t1, $zero, $zero
+	loop:	
 		jal sbrt
-		beq $t1, $s0, end_loop
+		beq $t0, $s0, end_loop
+		jmp loop
 	end_loop:
 		addi $v0, $v0, 1
 		end
 sbrt:
-	addi $t1, $t1, 1
+	addi $t0, $t0, 1
 	jr $ra
-	end	
+
+/// Demonstrates the use of "jump and link" and "jr"
+/// Aswell as label aliasing

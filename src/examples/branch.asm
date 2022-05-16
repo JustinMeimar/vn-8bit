@@ -5,3 +5,6 @@ main:
 	jmp main	
 exit_main:
 	end
+
+
+/// demostrates the use of beq

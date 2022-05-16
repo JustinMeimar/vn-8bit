@@ -21,7 +21,6 @@ use crate::assembler::Program;
 // structs
 #[derive(Parser)]
 pub struct Cli {
-    pattern: String,
     #[clap(parse(from_os_str))] 
     path: std::path::PathBuf,
 }
@@ -35,10 +34,10 @@ fn main() {
     let args = Cli::parse(); 
     let mut program = Program::new(); 
         program.load_program( &args.path );
-     
+        
     let mut res: bool = true; 
-    println!("\nWhat the CPU sees: ");
-    cpu.print_binary(program.memory);
+    println!("\nWhat the Reigster File Looks Like: ");
+    //cpu.print_binary(program.memory);
     while res == true{
         res = cpu.execute_cycle(program.memory).unwrap(); 
     }

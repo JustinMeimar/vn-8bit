@@ -43,84 +43,107 @@ impl CPU {
     pub fn execute_cycle(&mut self, prg_mem: [u8; 65535] ) -> Result<bool, bool> {
         
         let word: u16 = read_word(self.pc, prg_mem);
-        let res = self.process_opcode(self.pc, word, prg_mem);
-        if res != Ok(true){
+        let res = self.process_opcode(self.pc, word, prg_mem).unwrap();
+        if res == "Instruction: " {
             println!("Program terminated.... "); 
             Ok(false)
  
         }else{
-            self.print_reg_file();
+
+            self.print_reg_file(res);
             self.pc += 2; 
           
             Ok(true)
         } 
     }
 
-    pub fn process_opcode(&mut self, pc: u16, word: u16, prg_mem: [u8; 65535]) -> Result<bool, bool>{
+    pub fn process_opcode(&mut self, pc: u16, word: u16, prg_mem: [u8; 65535]) -> Result<String, bool>{
         //mask the word 
         let mut b0: u8 = ((word & 0xF000) >> 12 as u8).try_into().unwrap();
         let mut b1: u8 = ((word & 0x0F00) >> 8 as u8).try_into().unwrap();
         let mut b2: u8 = ((word & 0x00F0) >> 4 as u8).try_into().unwrap();
         let mut b3: u8 = ((word & 0x000F) as u8).try_into().unwrap(); 
-        
+        let mut print_stmt: String = "Instruction: ".to_string();       
+
         match b0 {
             0x0 => {
                 //impl nop
-                Ok(true)
+               
+                print_stmt.push_str("nop"); 
+                Ok(print_stmt)
             }, 
             0x1 => {
                 //impl lb  
                 let address: u16 = read_word(self.pc + 2, prg_mem); 
                 self.reg[b1 as usize] = self.mem[address as usize];
                 self.pc += 2;
-                Ok(true) 
+ 
+                print_stmt.push_str("lb"); 
+                Ok(print_stmt)
             },
             0x2 => {
                 //impl sb                
                 let address: u16 = read_word(self.pc + 2, prg_mem); 
                 self.mem[address as usize] = self.reg[b1 as usize];
                 self.pc += 2; 
-                Ok(true)
+                
+                
+                print_stmt.push_str("sb"); 
+                Ok(print_stmt)
             },
             0x3 => {
                 //impl and
                 self.reg[b1 as usize] = self.reg[b2 as usize] & self.reg[b3 as usize];
-                Ok(true)
+                
+                print_stmt.push_str("and"); 
+                Ok(print_stmt)
             },
             0x5 => {
                 //impl or
                 self.reg[b1 as usize] = self.reg[b2 as usize] | self.reg[b3 as usize];
-                Ok(true)
+                
+                print_stmt.push_str("or"); 
+                Ok(print_stmt)
             },
             0x5 => {
                 //impl nor
                 self.reg[b1 as usize] = !(self.reg[b2 as usize] | self.reg[b3 as usize]);
-                Ok(true)
+                
+                print_stmt.push_str("nor"); 
+                Ok(print_stmt)
             },   
             0x6 => {
                 //impl xor
                 self.reg[b1 as usize] = self.reg[b2 as usize] ^ self.reg[b3 as usize]; 
-                Ok(true)
+                
+                print_stmt.push_str("xor"); 
+                Ok(print_stmt)
             },
             0x7 => {
                 // impl add op $r1 |-- value --| range(0--127)
                 let sum = self.reg[b2 as usize] + self.reg[b3 as usize];
                 self.reg[b1 as usize] = sum;
                 
-                Ok(true)
+                
+                print_stmt.push_str("add"); 
+                Ok(print_stmt)
             },
             0x8 => {
                 // impl addi 
                 let sum = b3 as u8 + self.reg[b2 as usize];
                 self.reg[b1 as usize] = sum;
-
-                Ok(true)
+                
+                
+                print_stmt.push_str("addi"); 
+                Ok(print_stmt)
             },
             0x9 => {
                 // impl jmp
-                let dest = ((b1 as u16) << 8 | (b2 as u16) << 4 | b3 as u16) as u16; 
-                self.pc = dest;
-                Ok(true)
+                let dest = ((b1 as u16) << 8 | (b2 as u16) << 4 | b3 as u16) as u16;  
+                self.pc = dest; 
+
+                print_stmt.push_str("jmp"); 
+                Ok(print_stmt)
             },
             0xA => {
                 //impl beq
@@ -134,7 +157,9 @@ impl CPU {
                         self.pc += b3 as u16;
                     } 
                 }
-                Ok(true)
+     
+                print_stmt.push_str("beq"); 
+                Ok(print_stmt)
             },
             0xB => {
                 // impl jal
@@ -146,28 +171,33 @@ impl CPU {
                 self.ra_lo = (return_address & 0x00FF) as u8;
 
                 self.pc += 2;
-                Ok(true)
+    
+                
+                print_stmt.push_str("jal"); 
+                Ok(print_stmt)
             },
             0xC => {
                 // impl jr 
                 let address = ((self.ra_hi as u16) << 8) | self.ra_lo as u16;
-                self.pc = address;              
-
-                Ok(true)
+                self.pc = address + 2;              
+                
+                print_stmt.push_str("jr"); 
+                Ok(print_stmt)
             },
             0xF => {
-                //terminate program 
-                Ok(false) 
+                //terminate program  
+                 
+                Ok(print_stmt)
             },         
             _ => {println!("Invalid Instruction"); Err(false)},
         }
     }
     
-    pub fn print_reg_file(&mut self){
+    pub fn print_reg_file(&mut self, instr: String){
         
         let mut chars: String = "".to_string();
-        println!("-------------------------------");
-        println!("PC: {}", self.pc);
+        
+        println!("{}", instr);
         println!("$0 | $t0 | $t1 | $t2 | $t3 | $s0 | $s1 | $s2 | $s3 | $s4 | $a0 | $a1 | $a2 | $v0 | $v1 | $ra |");
 
         for r in 0..16{
@@ -177,7 +207,8 @@ impl CPU {
             //self.reg[r]  
         }
         println!("{}", chars);
-        
+        println!("PC: {}", self.pc); 
+        println!("-------------------------------");
     } 
     pub fn print_binary(&mut self, prg_mem: [u8; 65535]){
         let mut chars: String = "".to_string(); 

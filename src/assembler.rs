@@ -59,8 +59,7 @@ impl Program {
 
         for line in reader.lines() {    
             let cpy = line?.clone();
-            let line = self.parse_line(&cpy, i, &mut alias_table).unwrap();
-            println!("{}", line);
+            let line = self.parse_line(&cpy, i, &mut alias_table).unwrap(); 
             let instr = self.parse_instr(&line, i); 
        
             if instr.as_ref().unwrap() == "lb" || instr.as_ref().unwrap() == "sb" {
@@ -69,6 +68,7 @@ impl Program {
             if instr.as_ref().unwrap() == "jal" {
                 i+=2; //skip pc by two
             }
+
             i += 2;             
         }
         Ok(())  
@@ -113,7 +113,6 @@ impl Program {
     pub fn store_word_from_bytes(&mut self, byte1: u8, byte2: u8, idx: u32) -> Result<(), &str>{
         self.memory[idx as usize] = byte1;
         self.memory[idx as usize + 1] = byte2;
-        println!("b1/b2:  {} {}", byte1, byte1);
         Ok(())
     }
     
@@ -158,7 +157,6 @@ impl Program {
                 self.memory[i as usize +3] = 0x00;
 
                 i+=2;
-                self.print_instr(i, &v[0], &v[1], Some(&v[2]), None);
 
                 return Ok("lb".to_string());
             },
@@ -176,8 +174,6 @@ impl Program {
                 self.memory[i as usize +3] = 0x00;
 
                 i+=2;
-
-                self.print_instr(i, &v[0], &v[1], Some(&v[2]), None);
 
                 return Ok("sb".to_string());
             },
@@ -258,7 +254,6 @@ impl Program {
                 let byte2: u8 = (r2 << 4) | im;
 
                 self.store_word_from_bytes(byte1, byte2, i);
-                self.print_instr(i, &v[0], &v[1], Some(&v[2]), Some(&v[3]));
 
                 return Ok("addi".to_string());
             },
@@ -270,8 +265,7 @@ impl Program {
                 let byte2: u8 = (addr & 0x00FF) as u8;
                 
                 self.store_word_from_bytes(byte1, byte2, i);
-                self.print_instr(i, &v[0], &v[1], None, None); 
-                
+               
                 return Ok("jmp".to_string());
             },
             "beq" => {
@@ -285,8 +279,7 @@ impl Program {
                 let byte2: u8 = (r2<<4 | im & 0x0F); 
 
                 self.store_word_from_bytes(byte1, byte2, i);
-                self.print_instr(i, &v[0], &v[1], Some(&v[2]), Some(&v[3])); 
-                
+               
                 return Ok("beq".to_string());
             },
             "jal" => {
@@ -302,9 +295,7 @@ impl Program {
                 self.memory[i as usize +1] = byte2;
                 self.memory[i as usize +2] = byte3;
                 self.memory[i as usize +3] = byte4;
-                    
-                self.print_instr(i, &v[0], &v[1], None, None); 
-                
+                     
                 return Ok("jal".to_string());
             },
             "jr" => {
@@ -312,23 +303,21 @@ impl Program {
                 let op = 0xC0;
                 let r1 = self.parse_register(&v[1], 16);
 
-                let byte1: u8 = (op | r1) as u8;
+                let byte1: u8 = (op | (r1));
                 let byte2: u8 = 0x00;
 
-                self.store_word_from_bytes(byte1, byte2, i);
+                self.store_word_from_bytes(byte1, byte2, i); 
 
+                return Ok("jr".to_string());
             },
             "nop" => {
                 let byte1: u8 = 0x00 as u8;
                 let byte2: u8 = 0x00 as u8;
 
-                self.store_word_from_bytes(byte1, byte2, i);
-
                 return Ok("nop".to_string());
             }            
             // Default case
-            _ => {
-                println!("Invalid Instruction (Parsed)");
+            _ => { 
                 return Ok("invalid".to_string());
             }
         } 

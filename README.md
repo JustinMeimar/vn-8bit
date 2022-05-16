@@ -2,6 +2,8 @@
 ## **Download and Build**
 
 #### Requires Rust to be installed
+#### 
+        Cargo run examples/<example.asm>
 
 ## **Regiser Use**
 |Register|Non-Aliased|Summary|
@@ -38,29 +40,30 @@
 ||0xD|
 ||0xE|
 |end|0xF| no type| end| terminates any program from anywhere
+
 ## **The Assember**
 #### Input code written in assembly (with the Instruction Set referenced above)and see it transformed into machine code our virtual CPU can actually process. The main technical achievments being address aliasing and register alias  mapping. For example:
 |pre assembled code|assembled code|
 |----|----|
 |beq $s0, $v0, endloop|beq $5, $D, 10|
 
-### Example
-        
-        // 0x00  addi $t0, $t0, 1
-        // 0x02  loop:
-        // 0x04     li $v0, $v0, 1
-        // 0x06     beq $s0, $s0 endloop
-        // 0x08       j loop
-        // 0x0A
-        // 0x0C  endloop:
-        // 0x0E     addi $v0, 10
-        // 0x10     
+#### The Assembled code format is easy to parse and execute.
 
-        // 0x00  addi $1, $1, 1
-        // 0x02  nop
-        // 0x04  li $D, $D, 1
-        // 0x06  beq $5, $5, 0x0C
-        // 0x08  j 0x04
-        // 0x0A  nop
-        // 0x0C  addi $D, 10
+### Examples
         
+        main:
+                addi $s0, $zero, 6
+                add $t1, $zero, $zero
+                loop:
+                        jal sbrt
+                        beq $t0, $s0, end_loop
+                        jmp loop
+                end_loop:
+                        addi $v0, $v0, 1
+                        end
+        sbrt: 
+                addi $t0, $t0, 1
+                jr $ra
+        
+        
+
