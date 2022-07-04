@@ -3,6 +3,7 @@
 
 #### Requires Rust to be installed
 #### 
+        Cargo build
         Cargo run examples/<example.asm>
 
 ## **Regiser Use**
