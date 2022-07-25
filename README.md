@@ -44,9 +44,9 @@
 
 ## **The Assember**
 #### Input code written in assembly (with the Instruction Set referenced above)and see it transformed into machine code our virtual CPU can actually process. The main technical achievments being address aliasing and register alias  mapping. For example:
-|pre assembled code|assembled code|
+|pre assembled code|IR|
 |----|----|
-|beq $s0, $v0, endloop|beq $5, $D, 10|
+|beq $s0, $v0, endloop|beq $5, $D, 10|1101 0101 1011 1110|
 
 #### The Assembled code format is easy to parse and execute.
 
